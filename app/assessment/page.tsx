@@ -1,61 +1,239 @@
 'use client';
 
-import { AssessmentQuestion } from '@/components/assessment/assessment-question';
-import { AssessmentNavigation } from '@/components/assessment/assessment-navigation';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+import { Navigation } from '@/components/navigation';
+import { Slider } from '@/components/ui/slider';
+import { Textarea } from '@/components/ui/textarea';
+import { Button } from '@/components/ui/button';
+import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
+import type { Database } from '@/types/supabase';
+
+interface Question {
+  id: number;
+  text: string;
+  category_id: number;
+}
+
+interface Category {
+  id: number;
+  name: string;
+  description: string;
+}
+
+interface Answer {
+  question_id: number;
+  text: string;
+  confidence: number;
+  knowledge: number;
+}
 
 export default function AssessmentPage() {
+  const router = useRouter();
+  const supabase = createClientComponentClient<Database>();
+  
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
+  const [questions, setQuestions] = useState<Question[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [answers, setAnswers] = useState<Record<number, Answer>>({});
+  
+  // Fetch questions and categories
+  useEffect(() => {
+    const fetchData = async () => {
+      // First check auth status
+      const { data: { session } } = await supabase.auth.getSession();
+      console.log('Auth session:', session);
 
-  // This would come from your database
-  const mockAssessment = {
-    categories: [
-      {
-        id: 1,
-        name: 'Business Strategy',
-        preamble: 'Evaluate your current business strategy and planning processes.',
-        questions: [
-          {
-            id: 1,
-            text: 'How well defined is your business strategy?',
-            confidenceValue: 50,
-            knowledgeValue: 30,
-          },
-          // Add more questions as needed
-        ],
-      },
-    ],
+      if (!session) {
+        console.log('No auth session found');
+        router.push('/auth'); // Redirect to login
+        return;
+      }
+
+      console.log('Starting data fetch...');
+      
+      try {
+        // Questions query
+        const { data: questionsData, error: questionsError } = await supabase
+          .from('questions')
+          .select('*');
+
+        console.log('Questions response:', { questionsData, questionsError });
+
+        // Categories query
+        const { data: categoriesData, error: categoriesError } = await supabase
+          .from('categories')
+          .select('*');
+
+        console.log('Categories response:', { categoriesData, categoriesError });
+
+        if (questionsError) {
+          throw new Error(`Questions fetch error: ${questionsError.message}`);
+        }
+
+        if (categoriesError) {
+          throw new Error(`Categories fetch error: ${categoriesError.message}`);
+        }
+
+        if (!questionsData || questionsData.length === 0) {
+          console.warn('No questions found in the database');
+        }
+
+        if (!categoriesData || categoriesData.length === 0) {
+          console.warn('No categories found in the database');
+        }
+
+        setQuestions(questionsData || []);
+        setCategories(categoriesData || []);
+
+      } catch (error) {
+        console.error('Error in fetchData:', error);
+        // Handle error state here
+      }
+    };
+
+    fetchData();
+  }, [supabase]);
+
+  const currentQuestion = questions[currentQuestionIndex];
+  const currentCategory = currentQuestion 
+    ? categories.find(c => c.id === currentQuestion.category_id)
+    : null;
+
+  const handleAnswerChange = (questionId: number, field: keyof Answer, value: string | number) => {
+    console.log(`Updating ${field} for question ${questionId}:`, value);
+    
+    setAnswers(prev => ({
+      ...prev,
+      [questionId]: {
+        ...prev[questionId],
+        question_id: questionId,
+        [field]: value
+      }
+    }));
   };
 
-  const currentCategory = mockAssessment.categories[0];
-  const currentQuestion = currentCategory.questions[currentQuestionIndex];
-
-  const handleNext = () => {
-    if (currentQuestionIndex < currentCategory.questions.length - 1) {
-      setCurrentQuestionIndex(prev => prev + 1);
-    }
+  const handleNavigation = (index: number) => {
+    console.log('Navigating to question:', index);
+    setCurrentQuestionIndex(index);
   };
 
-  const handlePrevious = () => {
-    if (currentQuestionIndex > 0) {
-      setCurrentQuestionIndex(prev => prev - 1);
-    }
+  const handleGenerateReport = async () => {
+    console.log('Generating report with answers:', answers);
+    // Implement report generation logic
   };
+
+  if (!currentQuestion || !currentCategory) {
+    return <div>Loading...</div>;
+  }
 
   return (
-    <div className="max-w-5xl mx-auto p-8 bg-[#FDF8F6]">
-      <AssessmentQuestion
-        question={currentQuestion}
-        onConfidenceChange={(value) => console.log('Confidence:', value)}
-        onKnowledgeChange={(value) => console.log('Knowledge:', value)}
-      />
+    <div className="min-h-screen bg-background">
+      <Navigation />
+      
+      <main className="container mx-auto p-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {/* Column A: Question and Answer */}
+          <div className="space-y-6">
+            <div className="bg-card rounded-lg p-6">
+              <h2 className="text-2xl font-bold mb-4">{currentCategory.name}</h2>
+              {currentCategory.description && (
+                <p className="text-muted-foreground mb-6">
+                  {currentCategory.description}
+                </p>
+              )}
+              
+              <div className="space-y-4">
+                <h3 className="text-lg font-semibold">
+                  Question {currentQuestionIndex + 1} of {questions.length}
+                </h3>
+                <p className="text-foreground">{currentQuestion.text}</p>
+                
+                <Textarea
+                  placeholder="Enter your answer..."
+                  value={answers[currentQuestion.id]?.text || ''}
+                  onChange={(e) => handleAnswerChange(currentQuestion.id, 'text', e.target.value)}
+                  className="min-h-[150px]"
+                />
+              </div>
+            </div>
+          </div>
 
-      <AssessmentNavigation
-        onPrevious={handlePrevious}
-        onNext={handleNext}
-        showPrevious={currentQuestionIndex > 0}
-        showNext={currentQuestionIndex < currentCategory.questions.length - 1}
-      />
+          {/* Column B: Sliders */}
+          <div className="space-y-6">
+            <div className="bg-card rounded-lg p-6">
+              <div className="space-y-8">
+                <div>
+                  <label className="text-sm font-medium mb-2 block">
+                    Confidence Level (1-10)
+                  </label>
+                  <Slider
+                    min={1}
+                    max={10}
+                    step={1}
+                    value={[answers[currentQuestion.id]?.confidence || 5]}
+                    onValueChange={([value]) => 
+                      handleAnswerChange(currentQuestion.id, 'confidence', value)
+                    }
+                  />
+                </div>
+
+                <div>
+                  <label className="text-sm font-medium mb-2 block">
+                    Knowledge Level (1-10)
+                  </label>
+                  <Slider
+                    min={1}
+                    max={10}
+                    step={1}
+                    value={[answers[currentQuestion.id]?.knowledge || 5]}
+                    onValueChange={([value]) => 
+                      handleAnswerChange(currentQuestion.id, 'knowledge', value)
+                    }
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Navigation Controls */}
+        <div className="flex justify-between mt-6">
+          <Button
+            onClick={() => handleNavigation(currentQuestionIndex - 1)}
+            disabled={currentQuestionIndex === 0}
+          >
+            Previous
+          </Button>
+
+          {currentQuestionIndex === questions.length - 1 ? (
+            <Button onClick={handleGenerateReport}>
+              Generate Report
+            </Button>
+          ) : (
+            <Button
+              onClick={() => handleNavigation(currentQuestionIndex + 1)}
+              disabled={currentQuestionIndex === questions.length - 1}
+            >
+              Next
+            </Button>
+          )}
+        </div>
+
+        {/* Question Navigation */}
+        <div className="mt-6 flex flex-wrap gap-2">
+          {questions.map((_, index) => (
+            <Button
+              key={index}
+              variant={currentQuestionIndex === index ? "default" : "outline"}
+              size="sm"
+              onClick={() => handleNavigation(index)}
+            >
+              {index + 1}
+            </Button>
+          ))}
+        </div>
+      </main>
     </div>
   );
 }
