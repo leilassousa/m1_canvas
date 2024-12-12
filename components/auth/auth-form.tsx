@@ -9,11 +9,15 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { AlertCircle } from 'lucide-react';
+import { useAuth } from '@/lib/hooks/useAuth';
+import { useRouter } from 'next/navigation';
 
 const authSchema = z.object({
   email: z.string().email('Invalid email address'),
   password: z.string().min(8, 'Password must be at least 8 characters'),
 });
+
+type AuthFormValues = z.infer<typeof authSchema>;
 
 type AuthFormProps = {
   mode: 'login' | 'register';
@@ -22,24 +26,37 @@ type AuthFormProps = {
 export function AuthForm({ mode }: AuthFormProps) {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const { signIn, signUp } = useAuth();
+  const router = useRouter();
 
   const {
     register,
     handleSubmit,
     formState: { errors },
-  } = useForm({
+  } = useForm<AuthFormValues>({
     resolver: zodResolver(authSchema),
   });
 
-  const onSubmit = async (data: any) => {
+  const onSubmit = async (data: AuthFormValues) => {
     setLoading(true);
     setError(null);
     
     try {
-      // Here you would implement your authentication logic
-      console.log('Form submitted:', data);
+      if (mode === 'login') {
+        await signIn(data.email, data.password);
+        router.push('/dashboard'); // Redirect to dashboard after login
+      } else {
+        await signUp(data.email, data.password);
+        // Show success message for registration
+        setError('Please check your email to verify your account.');
+      }
     } catch (err) {
-      setError('An error occurred. Please try again.');
+      console.error('Auth error:', err);
+      setError(
+        err instanceof Error 
+          ? err.message 
+          : 'An error occurred. Please try again.'
+      );
     } finally {
       setLoading(false);
     }
@@ -48,7 +65,7 @@ export function AuthForm({ mode }: AuthFormProps) {
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
       {error && (
-        <Alert variant="destructive">
+        <Alert variant={mode === 'register' && error.includes('check your email') ? 'default' : 'destructive'}>
           <AlertCircle className="h-4 w-4" />
           <AlertDescription>{error}</AlertDescription>
         </Alert>
@@ -63,7 +80,7 @@ export function AuthForm({ mode }: AuthFormProps) {
           {...register('email')}
         />
         {errors.email && (
-          <p className="text-sm text-red-500">{errors.email.message as string}</p>
+          <p className="text-sm text-red-500">{errors.email.message}</p>
         )}
       </div>
 
@@ -75,13 +92,18 @@ export function AuthForm({ mode }: AuthFormProps) {
           {...register('password')}
         />
         {errors.password && (
-          <p className="text-sm text-red-500">{errors.password.message as string}</p>
+          <p className="text-sm text-red-500">{errors.password.message}</p>
         )}
       </div>
 
       {mode === 'login' && (
         <div className="flex items-center justify-end">
-          <Button variant="link" className="text-sm text-orange-600 hover:text-orange-500">
+          <Button 
+            variant="link" 
+            className="text-sm text-orange-600 hover:text-orange-500"
+            onClick={() => {/* TODO: Implement password reset */}}
+            type="button"
+          >
             Forgot password?
           </Button>
         </div>

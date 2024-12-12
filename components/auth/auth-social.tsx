@@ -2,10 +2,13 @@
 
 import { Button } from '@/components/ui/button';
 import { Github, Twitter, Facebook } from 'lucide-react';
+import { createClient } from '@/lib/supabase/client';
+import { Provider } from '@supabase/supabase-js';
 
 const socialProviders = [
   {
     name: 'Google',
+    provider: 'google' as Provider,
     icon: () => (
       <svg className="w-5 h-5" viewBox="0 0 24 24">
         <path
@@ -28,39 +31,44 @@ const socialProviders = [
     ),
   },
   {
-    name: 'Twitter',
-    icon: Twitter,
-    className: 'bg-[#1DA1F2] hover:bg-[#1a8cd8] text-white',
-  },
-  {
-    name: 'Facebook',
-    icon: Facebook,
-    className: 'bg-[#4267B2] hover:bg-[#365899] text-white',
-  },
-  {
     name: 'GitHub',
+    provider: 'github' as Provider,
     icon: Github,
     className: 'bg-[#24292F] hover:bg-[#1a1e23] text-white',
   },
 ];
 
 export function AuthSocial() {
-  const handleSocialLogin = (provider: string) => {
-    // Implement social login logic here
-    console.log(`Logging in with ${provider}`);
+  const supabase = createClient();
+
+  const handleSocialLogin = async (provider: Provider) => {
+    try {
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider,
+        options: {
+          redirectTo: `${window.location.origin}/auth/callback`,
+        },
+      });
+
+      if (error) {
+        throw error;
+      }
+    } catch (err) {
+      console.error('Social login error:', err);
+    }
   };
 
   return (
     <div className="grid grid-cols-2 gap-3">
-      {socialProviders.map((provider) => (
+      {socialProviders.map(({ name, provider, icon: Icon, className }) => (
         <Button
-          key={provider.name}
+          key={name}
           variant="outline"
-          className={`w-full ${provider.className || ''}`}
-          onClick={() => handleSocialLogin(provider.name)}
+          className={`w-full ${className || ''}`}
+          onClick={() => handleSocialLogin(provider)}
         >
-          <provider.icon className="w-5 h-5 mr-2" />
-          {provider.name}
+          {typeof Icon === 'function' ? <Icon className="w-5 h-5 mr-2" /> : <Icon className="w-5 h-5 mr-2" />}
+          {name}
         </Button>
       ))}
     </div>
