@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { Navigation } from '@/components/navigation';
 import { Slider } from '@/components/ui/slider';
 import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
@@ -129,8 +128,6 @@ export default function AssessmentPage() {
 
   return (
     <div className="min-h-screen bg-background">
-      <Navigation />
-      
       <main className="container mx-auto p-6">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {/* Column A: Question and Answer */}
@@ -162,35 +159,49 @@ export default function AssessmentPage() {
           {/* Column B: Sliders */}
           <div className="space-y-6">
             <div className="bg-card rounded-lg p-6">
-              <div className="space-y-8">
-                <div>
-                  <label className="text-sm font-medium mb-2 block">
+              <div className="flex justify-center gap-12">
+                <div className="flex flex-col items-center">
+                  <label className="text-sm font-medium mb-4 block">
                     Confidence Level (1-10)
                   </label>
-                  <Slider
-                    min={1}
-                    max={10}
-                    step={1}
-                    value={[answers[currentQuestion.id]?.confidence || 5]}
-                    onValueChange={([value]) => 
-                      handleAnswerChange(currentQuestion.id, 'confidence', value)
-                    }
-                  />
+                  <div className="flex flex-col items-center">
+                    <span className="text-lg font-semibold mb-2">
+                      {answers[currentQuestion.id]?.confidence || 5}
+                    </span>
+                    <Slider
+                      min={1}
+                      max={10}
+                      step={1}
+                      value={[answers[currentQuestion.id]?.confidence || 5]}
+                      onValueChange={([value]) => 
+                        handleAnswerChange(currentQuestion.id, 'confidence', value)
+                      }
+                      orientation="vertical"
+                      className="h-[300px] py-4"
+                    />
+                  </div>
                 </div>
 
-                <div>
-                  <label className="text-sm font-medium mb-2 block">
+                <div className="flex flex-col items-center">
+                  <label className="text-sm font-medium mb-4 block">
                     Knowledge Level (1-10)
                   </label>
-                  <Slider
-                    min={1}
-                    max={10}
-                    step={1}
-                    value={[answers[currentQuestion.id]?.knowledge || 5]}
-                    onValueChange={([value]) => 
-                      handleAnswerChange(currentQuestion.id, 'knowledge', value)
-                    }
-                  />
+                  <div className="flex flex-col items-center">
+                    <span className="text-lg font-semibold mb-2">
+                      {answers[currentQuestion.id]?.knowledge || 5}
+                    </span>
+                    <Slider
+                      min={1}
+                      max={10}
+                      step={1}
+                      value={[answers[currentQuestion.id]?.knowledge || 5]}
+                      onValueChange={([value]) => 
+                        handleAnswerChange(currentQuestion.id, 'knowledge', value)
+                      }
+                      orientation="vertical"
+                      className="h-[300px] py-4"
+                    />
+                  </div>
                 </div>
               </div>
             </div>
