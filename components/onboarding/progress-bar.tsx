@@ -9,7 +9,7 @@ export const ProgressBar = ({ currentStep, totalSteps }: ProgressBarProps) => {
   return (
     <div className="w-full h-2 bg-gray-200 rounded-full overflow-hidden">
       <div
-        className="h-full bg-blue-500 transition-all duration-300 ease-in-out"
+        className="h-full bg-green-500 transition-all duration-300 ease-in-out"
         style={{ width: `${progress}%` }}
         role="progressbar"
         aria-valuenow={currentStep}

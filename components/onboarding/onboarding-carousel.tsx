@@ -34,47 +34,59 @@ export const OnboardingCarousel = () => {
   }, []);
 
   return (
-    <div className="min-h-screen flex flex-col p-6 gap-6">
-      <ProgressBar currentStep={currentSlide} totalSteps={MOCK_SLIDES.length} />
+    <div className="min-h-screen flex flex-col items-center px-4 md:px-8 lg:px-12">
+      {/* Top spacing */}
+      <div className="w-full max-w-4xl pt-4 md:pt-6">
+        <ProgressBar currentStep={currentSlide} totalSteps={MOCK_SLIDES.length} />
+      </div>
       
-      <div className="flex-1 relative h-[600px] overflow-hidden">
-        <div 
-          className="absolute top-0 left-0 flex w-full h-full transition-transform duration-300 ease-in-out"
-          style={{ transform: `translateX(-${(currentSlide - 1) * 100}%)` }}
-        >
-          {MOCK_SLIDES.map((slide) => (
-            <div
-              key={slide.id}
-              className="w-full h-full flex-shrink-0"
-              style={{ minWidth: '100%' }}
-            >
-              <div className="relative w-full h-full">
-                <Image
-                  src={slide.imageUrl}
-                  alt={slide.alt}
-                  fill
-                  className="object-contain"
-                  priority
-                />
+      {/* Main carousel container */}
+      <div className="w-full max-w-4xl flex-1 relative my-4 md:my-6 overflow-hidden">
+        <div className="absolute inset-0">
+          <div 
+            className="relative h-full flex transition-transform duration-300 ease-in-out"
+            style={{ transform: `translateX(-${(currentSlide - 1) * 100}%)` }}
+          >
+            {MOCK_SLIDES.map((slide) => (
+              <div
+                key={slide.id}
+                className="w-full h-full flex-shrink-0 overflow-hidden"
+                style={{ minWidth: '100%' }}
+              >
+                <div className="relative w-full h-full">
+                  <Image
+                    src={slide.imageUrl}
+                    alt={slide.alt}
+                    fill
+                    className="object-contain"
+                    priority
+                  />
+                </div>
               </div>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
 
-        <CarouselNavigation
-          onPrevious={handlePrevious}
-          onNext={handleNext}
-          canGoPrevious={currentSlide > 1}
-          canGoNext={currentSlide < MOCK_SLIDES.length}
-        />
+          <CarouselNavigation
+            onPrevious={handlePrevious}
+            onNext={handleNext}
+            canGoPrevious={currentSlide > 1}
+            canGoNext={currentSlide < MOCK_SLIDES.length}
+          />
+        </div>
       </div>
 
-      <button
-        onClick={handleSkip}
-        className="self-end px-4 py-2 text-sm text-gray-600 hover:text-gray-900 transition-colors"
-      >
-        Skip Onboarding
-      </button>
+      {/* Bottom button container */}
+      <div className="w-full max-w-4xl flex justify-center pb-4 md:pb-6">
+        <button
+          onClick={handleSkip}
+          className="px-6 py-2.5 text-sm font-medium text-white bg-green-600 
+                   square-full hover:bg-green-700 transition-colors duration-200
+                   shadow-md hover:shadow-lg active:shadow-sm
+                   transform hover:-translate-y-0.5 active:translate-y-0"
+        >
+          Finish Onboarding
+        </button>
+      </div>
     </div>
   );
 };
