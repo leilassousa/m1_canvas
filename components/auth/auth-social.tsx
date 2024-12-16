@@ -1,21 +1,23 @@
 'use client';
 
 import { Button } from '@/components/ui/button';
-import { Github, Twitter, Facebook, Icon } from 'lucide-react';
+import { Github } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
-import { Provider } from '@supabase/supabase-js';
+import { Provider as SupabaseProvider } from '@supabase/supabase-js';
 
-interface Provider {
+interface SocialProvider {
   name: string;
-  icon: React.ComponentType;
+  provider: SupabaseProvider;
+  icon: React.ComponentType<{ className?: string }>;
+  className?: string;
 }
 
-const socialProviders = [
+const socialProviders: SocialProvider[] = [
   {
     name: 'Google',
-    provider: 'google' as Provider,
-    icon: () => (
-      <svg className="w-5 h-5" viewBox="0 0 24 24">
+    provider: 'google',
+    icon: ({ className }) => (
+      <svg className={className} viewBox="0 0 24 24">
         <path
           d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
           fill="#4285F4"
@@ -37,7 +39,7 @@ const socialProviders = [
   },
   {
     name: 'GitHub',
-    provider: 'github' as Provider,
+    provider: 'github',
     icon: Github,
     className: 'bg-[#24292F] hover:bg-[#1a1e23] text-white',
   },
@@ -46,7 +48,7 @@ const socialProviders = [
 export function AuthSocial() {
   const supabase = createClient();
 
-  const handleSocialLogin = async (provider: Provider) => {
+  const handleSocialLogin = async (provider: SupabaseProvider) => {
     try {
       const { error } = await supabase.auth.signInWithOAuth({
         provider,
@@ -56,6 +58,7 @@ export function AuthSocial() {
       });
 
       if (error) {
+        console.error('OAuth error:', error.message);
         throw error;
       }
     } catch (err) {
@@ -72,7 +75,7 @@ export function AuthSocial() {
           className={`w-full ${className || ''}`}
           onClick={() => handleSocialLogin(provider)}
         >
-          {typeof Icon === 'function' ? <Icon className="w-5 h-5 mr-2" /> : <Icon className="w-5 h-5 mr-2" />}
+          <Icon className="w-5 h-5 mr-2" />
           {name}
         </Button>
       ))}
