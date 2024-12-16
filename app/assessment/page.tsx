@@ -6,6 +6,7 @@ import { Slider } from '@/components/ui/slider';
 import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
+import { toast } from '@/components/ui/use-toast';
 import type { Database } from '@/types/supabase';
 
 interface Question {
@@ -23,8 +24,8 @@ interface Category {
 interface Answer {
   question_id: number;
   text: string;
-  confidence: number;
-  knowledge: number;
+  confidence_value: number;
+  knowledge_value: number;
 }
 
 export default function AssessmentPage() {
@@ -35,64 +36,69 @@ export default function AssessmentPage() {
   const [questions, setQuestions] = useState<Question[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [answers, setAnswers] = useState<Record<number, Answer>>({});
+  const [assessmentId, setAssessmentId] = useState<string | null>(null);
+  const [isSaving, setIsSaving] = useState(false);
   
   // Fetch questions and categories
   useEffect(() => {
-    const fetchData = async () => {
-      // First check auth status
-      const { data: { session } } = await supabase.auth.getSession();
-      console.log('Auth session:', session);
-
-      if (!session) {
-        console.log('No auth session found');
-        router.push('/auth'); // Redirect to login
-        return;
-      }
-
-      console.log('Starting data fetch...');
-      
+    const initializeAssessment = async () => {
       try {
-        // Questions query
+        // First check auth status
+        const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+        
+        if (sessionError || !session) {
+          router.push('/auth');
+          return;
+        }
+
+        // Create a new assessment if we don't have one
+        if (!assessmentId) {
+          const { data: assessment, error: assessmentError } = await supabase
+            .from('assessments')
+            .insert({
+              status: 'draft',
+              title: `Assessment ${new Date().toLocaleDateString()}`,
+              user_id: session.user.id
+            })
+            .select()
+            .single();
+
+          if (assessmentError) {
+            console.error('Assessment creation error:', assessmentError);
+            throw assessmentError;
+          }
+          
+          console.log('Created new assessment:', assessment);
+          setAssessmentId(assessment.id);
+        }
+
+        // Fetch questions and categories
         const { data: questionsData, error: questionsError } = await supabase
           .from('questions')
           .select('*');
 
-        console.log('Questions response:', { questionsData, questionsError });
-
-        // Categories query
         const { data: categoriesData, error: categoriesError } = await supabase
           .from('categories')
           .select('*');
 
-        console.log('Categories response:', { categoriesData, categoriesError });
-
-        if (questionsError) {
-          throw new Error(`Questions fetch error: ${questionsError.message}`);
-        }
-
-        if (categoriesError) {
-          throw new Error(`Categories fetch error: ${categoriesError.message}`);
-        }
-
-        if (!questionsData || questionsData.length === 0) {
-          console.warn('No questions found in the database');
-        }
-
-        if (!categoriesData || categoriesData.length === 0) {
-          console.warn('No categories found in the database');
-        }
+        if (questionsError) throw questionsError;
+        if (categoriesError) throw categoriesError;
 
         setQuestions(questionsData || []);
         setCategories(categoriesData || []);
 
       } catch (error) {
-        console.error('Error in fetchData:', error);
-        // Handle error state here
+        console.error('Error in initialization:', error);
+        toast({
+          title: "Error",
+          description: error instanceof Error ? error.message : "Failed to load assessment. Please try again.",
+          variant: "destructive",
+        });
       }
     };
 
-    fetchData();
-  }, [supabase]);
+    initializeAssessment();
+  }, [supabase, router, assessmentId]);
 
   const currentQuestion = questions[currentQuestionIndex];
   const currentCategory = currentQuestion 
@@ -112,14 +118,113 @@ export default function AssessmentPage() {
     }));
   };
 
-  const handleNavigation = (index: number) => {
-    console.log('Navigating to question:', index);
+  const saveCurrentAnswer = async () => {
+    if (!currentQuestion || !assessmentId) return;
+
+    const currentAnswer = answers[currentQuestion.id];
+    if (!currentAnswer) {
+      toast({
+        title: "Warning",
+        description: "Please provide an answer before proceeding.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsSaving(true);
+    try {
+      const { data: { user }, error: userError } = await supabase.auth.getUser();
+      
+      if (userError || !user) {
+        throw new Error('Authentication required');
+      }
+
+      console.log('Saving answer:', {
+        user_id: user.id,
+        assessment_id: assessmentId,
+        question_id: currentQuestion.id,
+        text: currentAnswer.text || '',
+        category: currentCategory?.name || '',
+        confidence_value: currentAnswer.confidence_value,
+        knowledge_value: currentAnswer.knowledge_value,
+      });
+
+      const { data: savedAnswer, error: saveError } = await supabase
+        .from('answers')
+        .insert({
+          user_id: user.id,
+          assessment_id: assessmentId,
+          question_id: currentQuestion.id,
+          text: currentAnswer.text || '',
+          category: currentCategory?.name || '',
+          confidence_value: currentAnswer.confidence_value,
+          knowledge_value: currentAnswer.knowledge_value,
+        })
+        .select()
+        .single();
+
+      if (saveError) {
+        console.error('Save error details:', saveError);
+        throw saveError;
+      }
+
+      console.log('Answer saved successfully:', savedAnswer);
+      toast({
+        title: "Success",
+        description: "Answer saved successfully!",
+      });
+
+    } catch (error) {
+      console.error('Error saving answer:', error);
+      toast({
+        title: "Error",
+        description: error instanceof Error ? error.message : "Failed to save answer. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleNavigation = async (index: number) => {
+    // Save current answer before navigation
+    await saveCurrentAnswer();
     setCurrentQuestionIndex(index);
   };
 
   const handleGenerateReport = async () => {
-    console.log('Generating report with answers:', answers);
-    // Implement report generation logic
+    if (!assessmentId) return;
+
+    try {
+      // Save the final answer first
+      await saveCurrentAnswer();
+
+      // Update assessment status to completed
+      const { data: updatedAssessment, error: updateError } = await supabase
+        .from('assessments')
+        .update({ status: 'completed' })
+        .eq('id', assessmentId)
+        .select()
+        .single();
+
+      if (updateError) {
+        console.error('Error completing assessment:', updateError);
+        throw updateError;
+      }
+
+      console.log('Assessment completed:', updatedAssessment);
+      
+      // Redirect to the report page
+      router.push(`/reports/${assessmentId}`);
+
+    } catch (error) {
+      console.error('Error generating report:', error);
+      toast({
+        title: "Error",
+        description: "Failed to complete assessment. Please try again.",
+        variant: "destructive",
+      });
+    }
   };
 
   if (!currentQuestion || !currentCategory) {
@@ -152,6 +257,14 @@ export default function AssessmentPage() {
                   onChange={(e) => handleAnswerChange(currentQuestion.id, 'text', e.target.value)}
                   className="min-h-[150px]"
                 />
+
+                <Button 
+                  onClick={saveCurrentAnswer}
+                  disabled={isSaving}
+                  className="w-full"
+                >
+                  {isSaving ? 'Saving...' : 'Save Answer'}
+                </Button>
               </div>
             </div>
           </div>
@@ -166,15 +279,15 @@ export default function AssessmentPage() {
                   </label>
                   <div className="flex flex-col items-center">
                     <span className="text-lg font-semibold mb-2">
-                      {answers[currentQuestion.id]?.confidence || 5}
+                      {answers[currentQuestion.id]?.confidence_value || 5}
                     </span>
                     <Slider
                       min={1}
                       max={10}
                       step={1}
-                      value={[answers[currentQuestion.id]?.confidence || 5]}
+                      value={[answers[currentQuestion.id]?.confidence_value || 5]}
                       onValueChange={([value]) => 
-                        handleAnswerChange(currentQuestion.id, 'confidence', value)
+                        handleAnswerChange(currentQuestion.id, 'confidence_value', value)
                       }
                       orientation="vertical"
                       className="h-[300px] py-4"
@@ -188,15 +301,15 @@ export default function AssessmentPage() {
                   </label>
                   <div className="flex flex-col items-center">
                     <span className="text-lg font-semibold mb-2">
-                      {answers[currentQuestion.id]?.knowledge || 5}
+                      {answers[currentQuestion.id]?.knowledge_value || 5}
                     </span>
                     <Slider
                       min={1}
                       max={10}
                       step={1}
-                      value={[answers[currentQuestion.id]?.knowledge || 5]}
+                      value={[answers[currentQuestion.id]?.knowledge_value || 5]}
                       onValueChange={([value]) => 
-                        handleAnswerChange(currentQuestion.id, 'knowledge', value)
+                        handleAnswerChange(currentQuestion.id, 'knowledge_value', value)
                       }
                       orientation="vertical"
                       className="h-[300px] py-4"
@@ -212,19 +325,23 @@ export default function AssessmentPage() {
         <div className="flex justify-between mt-6">
           <Button
             onClick={() => handleNavigation(currentQuestionIndex - 1)}
-            disabled={currentQuestionIndex === 0}
+            disabled={currentQuestionIndex === 0 || isSaving}
           >
             Previous
           </Button>
 
           {currentQuestionIndex === questions.length - 1 ? (
-            <Button onClick={handleGenerateReport}>
-              Generate Report
+            <Button 
+              onClick={handleGenerateReport}
+              disabled={isSaving}
+              className="bg-primary hover:bg-primary/90"
+            >
+              Complete & Generate Report
             </Button>
           ) : (
             <Button
               onClick={() => handleNavigation(currentQuestionIndex + 1)}
-              disabled={currentQuestionIndex === questions.length - 1}
+              disabled={currentQuestionIndex === questions.length - 1 || isSaving}
             >
               Next
             </Button>
@@ -239,6 +356,7 @@ export default function AssessmentPage() {
               variant={currentQuestionIndex === index ? "default" : "outline"}
               size="sm"
               onClick={() => handleNavigation(index)}
+              disabled={isSaving}
             >
               {index + 1}
             </Button>
