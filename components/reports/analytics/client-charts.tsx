@@ -49,52 +49,68 @@ export function ClientCharts({ answers }: ClientChartsProps) {
     return acc;
   }, {} as Record<string, { confidenceSum: number; knowledgeSum: number; count: number; }>);
 
-  const categories = Object.keys(categoryAverages);
-  const confidenceAverages = categories.map(
-    cat => categoryAverages[cat].confidenceSum / categoryAverages[cat].count
-  );
-  const knowledgeAverages = categories.map(
-    cat => categoryAverages[cat].knowledgeSum / categoryAverages[cat].count
-  );
-
-  const data = {
+  // Sort categories alphabetically
+  const categories = Object.keys(categoryAverages).sort();
+  
+  const confidenceData = {
     labels: categories,
-    datasets: [
-      {
-        label: 'Average Confidence',
-        data: confidenceAverages,
-        backgroundColor: 'rgba(53, 162, 235, 0.5)',
-      },
-      {
-        label: 'Average Knowledge',
-        data: knowledgeAverages,
-        backgroundColor: 'rgba(75, 192, 192, 0.5)',
-      },
-    ],
+    datasets: [{
+      label: 'Confidence Level',
+      data: categories.map(cat => 
+        +(categoryAverages[cat].confidenceSum / categoryAverages[cat].count).toFixed(1)
+      ),
+      backgroundColor: 'rgba(53, 162, 235, 0.7)',
+      borderRadius: 4,
+    }]
   };
 
-  const options = {
+  const knowledgeData = {
+    labels: categories,
+    datasets: [{
+      label: 'Knowledge Level',
+      data: categories.map(cat => 
+        +(categoryAverages[cat].knowledgeSum / categoryAverages[cat].count).toFixed(1)
+      ),
+      backgroundColor: 'rgba(75, 192, 192, 0.7)',
+      borderRadius: 4,
+    }]
+  };
+
+  const chartOptions = {
     responsive: true,
     plugins: {
       legend: {
-        position: 'top' as const,
+        display: false,
       },
-      title: {
-        display: true,
-        text: 'Average Confidence & Knowledge by Category',
+      tooltip: {
+        callbacks: {
+          label: (context: any) => {
+            return `${context.dataset.label}: ${context.parsed.y.toFixed(1)}/10`;
+          },
+        },
       },
     },
     scales: {
       y: {
         beginAtZero: true,
         max: 10,
+        ticks: {
+          stepSize: 1,
+        },
       },
     },
   };
 
   return (
-    <div className="w-full bg-card p-6 rounded-lg shadow-sm">
-      <Bar options={options} data={data} />
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div className="bg-card p-6 rounded-lg shadow-sm">
+        <h3 className="text-lg font-semibold mb-4 text-center">Confidence Levels by Category</h3>
+        <Bar options={chartOptions} data={confidenceData} />
+      </div>
+      <div className="bg-card p-6 rounded-lg shadow-sm">
+        <h3 className="text-lg font-semibold mb-4 text-center">Knowledge Levels by Category</h3>
+        <Bar options={chartOptions} data={knowledgeData} />
+      </div>
     </div>
   );
 } 
