@@ -34,7 +34,7 @@ export const PrintableReport = forwardRef<HTMLDivElement, PrintableReportProps>(
     }, {} as Record<string, typeof answers>);
 
     return (
-      <div ref={ref} className="p-8 bg-white">
+      <div ref={ref} className="printable-report p-8 bg-white">
         {/* Header */}
         <div className="mb-8">
           <h1 className="text-3xl font-bold">Assessment Report</h1>

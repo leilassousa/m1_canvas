@@ -80,3 +80,41 @@
     @apply bg-background text-foreground;
   }
 }
+
+/* Print styles */
+@media print {
+  /* Hide non-printable elements */
+  .print:hidden {
+    display: none !important;
+  }
+
+  /* Show print-only elements */
+  .print\:block {
+    display: block !important;
+  }
+
+  /* Reset background colors and shadows for better printing */
+  * {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  /* Ensure the page breaks properly */
+  .page-break {
+    page-break-before: always;
+  }
+
+  /* Adjust layout for printing */
+  .container {
+    width: 100% !important;
+    max-width: none !important;
+    margin: 0 !important;
+    padding: 20px !important;
+  }
+
+  /* Ensure charts print properly */
+  canvas {
+    max-width: 100% !important;
+    height: auto !important;
+  }
+}

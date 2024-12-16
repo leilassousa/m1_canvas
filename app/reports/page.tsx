@@ -1,12 +1,11 @@
 'use client';
 
-import { useEffect, useState, useRef, useMemo } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 import { toast } from '@/components/ui/use-toast';
 import { AnswersGrid } from "@/components/reports/answer-grid/answers-grid";
 import { ClientCharts } from "@/components/reports/analytics/client-charts";
 import type { Database } from '@/types/supabase';
-import { useReactToPrint } from 'react-to-print';
 import { PrintableReport } from '@/components/reports/printable-report';
 import { Button } from '@/components/ui/button';
 import { Printer } from 'lucide-react';
@@ -44,7 +43,6 @@ export default function ReportPage() {
   const [answers, setAnswers] = useState<Answer[]>([]);
   const [loading, setLoading] = useState(true);
   const supabase = createClientComponentClient<Database>();
-  const printRef = useRef<HTMLDivElement>(null);
 
   // Calculate category averages for charts
   const { confidenceData, knowledgeData, chartOptions } = useMemo(() => {
@@ -117,25 +115,27 @@ export default function ReportPage() {
     };
   }, [answers]);
 
-  const handlePrint = useReactToPrint({
-    content: () => printRef.current,
-    documentTitle: `Assessment Report - ${new Date().toLocaleDateString()}`,
-    onBeforeGetContent: () => {
-      console.log('Preparing document for printing...'); // Debug log
-    },
-    onAfterPrint: () => {
-      console.log('Document printed successfully'); // Debug log
-      toast({
-        title: "Success",
-        description: "Report downloaded successfully",
-      });
-    },
-  });
+  const handlePrint = () => {
+    // Add print-only class to body before printing
+    document.body.classList.add('print-mode');
+    
+    // Print the document
+    window.print();
+    
+    // Remove print-only class after printing
+    document.body.classList.remove('print-mode');
+    
+    // Show success message
+    toast({
+      title: "Success",
+      description: "Report downloaded successfully",
+    });
+  };
 
   useEffect(() => {
     async function fetchAnswers() {
       try {
-        console.log('Fetching answers...');
+        console.log('Fetching answers...'); // Debug log
         
         // First get the completed assessment IDs
         const { data: assessments, error: assessmentError } = await supabase
@@ -146,13 +146,13 @@ export default function ReportPage() {
         if (assessmentError) throw assessmentError;
         
         if (!assessments?.length) {
-          console.log('No completed assessments found');
+          console.log('No completed assessments found'); // Debug log
           setAnswers([]);
           return;
         }
 
         const assessmentIds = assessments.map(a => a.id);
-        console.log('Found completed assessments:', assessmentIds);
+        console.log('Found completed assessments:', assessmentIds); // Debug log
 
         // Then fetch answers for those assessments
         const { data, error } = await supabase
@@ -169,7 +169,7 @@ export default function ReportPage() {
 
         if (error) throw error;
         
-        console.log('Fetched answers:', data);
+        console.log('Fetched answers:', data); // Debug log
         setAnswers(data || []);
         
       } catch (error) {
@@ -193,7 +193,7 @@ export default function ReportPage() {
 
   return (
     <div className="container mx-auto py-8">
-      <div className="flex justify-between items-center mb-8">
+      <div className="flex justify-between items-center mb-8 print:hidden">
         <h1 className="text-3xl font-bold">Assessment Report</h1>
         <Button 
           onClick={handlePrint}
@@ -204,8 +204,16 @@ export default function ReportPage() {
         </Button>
       </div>
 
-      {/* Visible report content */}
-      <div>
+      {/* Report content - visible both on screen and print */}
+      <div className="print:block">
+        {/* Title for print version */}
+        <div className="hidden print:block mb-8">
+          <h1 className="text-3xl font-bold text-center">Assessment Report</h1>
+          <p className="text-center text-gray-500 mt-2">
+            Generated on {new Date().toLocaleDateString()}
+          </p>
+        </div>
+
         {/* Answers Grid Section */}
         <section className="mb-12">
           <h2 className="mb-6 text-2xl font-semibold">Answers by Category</h2>
@@ -232,23 +240,6 @@ export default function ReportPage() {
           <h2 className="mb-6 text-2xl font-semibold">AI Analysis</h2>
           {/* TODO: Add AI analysis component */}
         </section>
-      </div>
-
-      {/* Hidden printable version */}
-      <div className="hidden">
-        <PrintableReport
-          ref={printRef}
-          assessment={{
-            title: 'Business Assessment',
-            created_at: new Date().toISOString()
-          }}
-          answers={answers}
-          categoryAverages={{
-            confidenceData,
-            knowledgeData,
-            chartOptions
-          }}
-        />
       </div>
     </div>
   );
