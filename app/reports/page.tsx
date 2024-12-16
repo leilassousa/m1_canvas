@@ -116,14 +116,14 @@ export default function ReportPage() {
   }, [answers]);
 
   const handlePrint = () => {
-    // Add print-only class to body before printing
-    document.body.classList.add('print-mode');
+    // Add print-exact-colors class to body before printing
+    document.body.classList.add('print-exact-colors');
     
     // Print the document
     window.print();
     
-    // Remove print-only class after printing
-    document.body.classList.remove('print-mode');
+    // Remove print-exact-colors class after printing
+    document.body.classList.remove('print-exact-colors');
     
     // Show success message
     toast({
@@ -192,8 +192,8 @@ export default function ReportPage() {
   }
 
   return (
-    <div className="container mx-auto py-8">
-      <div className="flex justify-between items-center mb-8 print:hidden">
+    <div className="container mx-auto py-8 print-container">
+      <div className="flex justify-between items-center mb-8 print-hidden">
         <h1 className="text-3xl font-bold">Assessment Report</h1>
         <Button 
           onClick={handlePrint}
@@ -205,9 +205,9 @@ export default function ReportPage() {
       </div>
 
       {/* Report content - visible both on screen and print */}
-      <div className="print:block">
+      <div className="print-block">
         {/* Title for print version */}
-        <div className="hidden print:block mb-8">
+        <div className="hidden print-block mb-8">
           <h1 className="text-3xl font-bold text-center">Assessment Report</h1>
           <p className="text-center text-gray-500 mt-2">
             Generated on {new Date().toLocaleDateString()}
@@ -224,11 +224,11 @@ export default function ReportPage() {
         <section className="mb-12">
           <h2 className="mb-6 text-2xl font-semibold">Performance Analytics</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="bg-card p-6 rounded-lg shadow-sm">
+            <div className="bg-card p-6 rounded-lg shadow-sm print-chart">
               <h3 className="text-lg font-semibold mb-4 text-center">Confidence Levels by Category</h3>
               <Bar options={chartOptions} data={confidenceData} />
             </div>
-            <div className="bg-card p-6 rounded-lg shadow-sm">
+            <div className="bg-card p-6 rounded-lg shadow-sm print-chart">
               <h3 className="text-lg font-semibold mb-4 text-center">Knowledge Levels by Category</h3>
               <Bar options={chartOptions} data={knowledgeData} />
             </div>

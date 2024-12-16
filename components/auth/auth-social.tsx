@@ -1,9 +1,14 @@
 'use client';
 
 import { Button } from '@/components/ui/button';
-import { Github, Twitter, Facebook } from 'lucide-react';
+import { Github, Twitter, Facebook, Icon } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 import { Provider } from '@supabase/supabase-js';
+
+interface Provider {
+  name: string;
+  icon: React.ComponentType;
+}
 
 const socialProviders = [
   {

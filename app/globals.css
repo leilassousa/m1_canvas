@@ -81,40 +81,36 @@
   }
 }
 
-/* Print styles */
-@media print {
-  /* Hide non-printable elements */
-  .print:hidden {
-    display: none !important;
-  }
+@layer utilities {
+  /* Print styles */
+  @media print {
+    .print-hidden {
+      display: none !important;
+    }
 
-  /* Show print-only elements */
-  .print\:block {
-    display: block !important;
-  }
+    .print-block {
+      display: block !important;
+    }
 
-  /* Reset background colors and shadows for better printing */
-  * {
-    -webkit-print-color-adjust: exact !important;
-    print-color-adjust: exact !important;
-  }
+    .print-exact-colors {
+      -webkit-print-color-adjust: exact !important;
+      print-color-adjust: exact !important;
+    }
 
-  /* Ensure the page breaks properly */
-  .page-break {
-    page-break-before: always;
-  }
+    .print-break-before {
+      page-break-before: always;
+    }
 
-  /* Adjust layout for printing */
-  .container {
-    width: 100% !important;
-    max-width: none !important;
-    margin: 0 !important;
-    padding: 20px !important;
-  }
+    .print-container {
+      width: 100% !important;
+      max-width: none !important;
+      margin: 0 !important;
+      padding: 1.25rem !important;
+    }
 
-  /* Ensure charts print properly */
-  canvas {
-    max-width: 100% !important;
-    height: auto !important;
+    .print-chart {
+      max-width: 100% !important;
+      height: auto !important;
+    }
   }
 }
