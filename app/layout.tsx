@@ -8,8 +8,8 @@ import { Toaster } from "@/components/ui/toaster"
 const inter = Inter({ subsets: ['latin'] });
 
 export const metadata: Metadata = {
-  title: 'Next.js Multi-page App',
-  description: 'A Next.js application with multiple pages',
+  title: 'My Business Canva',
+  description: 'A structured way to think through all aspects of the business',
 };
 
 export default function RootLayout({
