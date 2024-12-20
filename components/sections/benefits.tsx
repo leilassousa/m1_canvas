@@ -5,23 +5,23 @@ import { Lightbulb, Target, Users, Rocket } from 'lucide-react';
 const benefits = [
   {
     icon: Lightbulb,
-    title: 'Innovative Solutions',
-    description: 'Custom strategies tailored to your unique business needs and goals.'
+    title: 'It is Visual and Intuitive',
+    description: 'Making complex business concepts more accessible.'
   },
   {
     icon: Target,
-    title: 'Goal-Oriented',
-    description: 'Focus on achieving measurable results and concrete business outcomes.'
+    title: 'Helps Identify Gaps',
+    description: 'without getting overwhelmed by details.'
   },
   {
     icon: Users,
-    title: 'Expert Team',
-    description: 'Access to experienced professionals across various domains.'
+    title: 'Flexibility',
+    description: 'Test different ideas quickly, facilitate discussion with partners and team members.'
   },
   {
     icon: Rocket,
-    title: 'Fast Implementation',
-    description: 'Quick deployment of solutions to keep you ahead of the competition.'
+    title: 'People Friendly',
+    description: 'Our minimalistic interface makes it easier for you to focus on what really matters.'
   }
 ];
 
@@ -31,10 +31,11 @@ export function BenefitsSection() {
       <div className="container mx-auto px-4">
         <div className="text-center mb-16">
           <h2 className="text-3xl font-bold text-gray-900 mb-4">
-            Why Choose Us
+            Use this tool if
           </h2>
-          <p className="text-lg text-gray-600 max-w-2xl mx-auto">
-            We bring together the best practices and innovative approaches to help your business succeed.
+          <p className="text-lg text-gray-600 max-w-3xl mx-auto">
+          You feel overwhelmed by business planning. Our assessment tool brings clarity and direction to busy entrepreneurs who want to work smarter, not harder.
+          Here is why you should use it:
           </p>
         </div>
 
