@@ -1,26 +1,26 @@
 'use client';
 
-import { Lightbulb, Target, Users, Rocket } from 'lucide-react';
+import { ScanEye, BrickWall, Grid2x2Plus, Hourglass } from 'lucide-react';
 
 const benefits = [
   {
-    icon: Lightbulb,
-    title: 'It is Visual and Intuitive',
+    icon: ScanEye,
+    title: 'Visual and Intuitive',
     description: 'Making complex business concepts more accessible.'
   },
   {
-    icon: Target,
+    icon: BrickWall,
     title: 'Helps Identify Gaps',
     description: 'without getting overwhelmed by details.'
   },
   {
-    icon: Users,
+    icon: Grid2x2Plus,
     title: 'Flexibility',
     description: 'Test different ideas quickly, facilitate discussion with partners and team members.'
   },
   {
-    icon: Rocket,
-    title: 'People Friendly',
+    icon: Hourglass,
+    title: 'Time Friendly',
     description: 'Our minimalistic interface makes it easier for you to focus on what really matters.'
   }
 ];
@@ -31,11 +31,13 @@ export function BenefitsSection() {
       <div className="container mx-auto px-4">
         <div className="text-center mb-16">
           <h2 className="text-3xl font-bold text-gray-900 mb-4">
-            Use this tool if
+          One-Page Plan. Zero Overwhelm.
           </h2>
           <p className="text-lg text-gray-600 max-w-3xl mx-auto">
-          You feel overwhelmed by business planning. Our assessment tool brings clarity and direction to busy entrepreneurs who want to work smarter, not harder.
-          Here is why you should use it:
+          Tired of wrestling with never-ending business plans? 
+          </p>
+          <p className="text-lg text-gray-600 max-w-3xl mx-auto">
+          Our Business Canva Builder simplifies everything into a single, interactive page. No matter if you’re a first-time business owner, freelancer, or budding entrepreneur—you can finally turn your idea into a structured plan in under 30 minutes.
           </p>
         </div>
 

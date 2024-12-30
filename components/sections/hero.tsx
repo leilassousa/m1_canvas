@@ -29,10 +29,10 @@ export function HeroSection() {
         <div className="container mx-auto px-4">
           <div className="max-w-2xl text-white">
             <h1 className="text-4xl md:text-5xl font-bold mb-6 leading-tight">
-              Get a structured view of your business in minutes, not months.
+            Build Your Business Canvas in Minutes—No MBA Required.
             </h1>
             <p className="text-lg md:text-xl mb-8 text-gray-100">
-              Our smart assessment tool helps solo entrepreneurs make confident decisions.
+            Get instant clarity on your business idea, boost your confidence, and receive personalized AI insights to guide you every step of the way.
             </p>
             <Link href="/auth">
               <Button 
