@@ -41,9 +41,7 @@ export default function Contact() {
           <div className="bg-orange-50 p-6 rounded-lg">
             <h2 className="text-xl font-semibold text-orange-800 mb-4">Other Ways to Reach Us</h2>
             <div className="space-y-3 text-orange-700">
-              <p>Email: contact@sketchmybiz.com</p>
-              <p>Phone: +1 (555) 123-4567</p>
-              <p>Address: 123 Business Ave, Suite 100, San Francisco, CA 94105</p>
+              <p>Email: connect@sketchmybiz.com</p>
             </div>
           </div>
         </div>

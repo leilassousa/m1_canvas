@@ -7,25 +7,25 @@ export default function Solutions() {
         <div className="grid gap-8">
           {/* Business Strategy */}
           <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
-            <h2 className="text-xl font-semibold text-gray-900 mb-3">Business Strategy</h2>
+            <h2 className="text-xl font-semibold text-gray-900 mb-3">Marketing Canva</h2>
             <p className="text-gray-600">
-              Comprehensive business planning and strategy development to help you achieve your goals.
+              Up next.
             </p>
           </div>
 
           {/* Digital Transformation */}
           <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
-            <h2 className="text-xl font-semibold text-gray-900 mb-3">Digital Transformation</h2>
+            <h2 className="text-xl font-semibold text-gray-900 mb-3">Villagers</h2>
             <p className="text-gray-600">
-              Modern digital solutions to streamline your operations and enhance customer experience.
+              Coming soon.
             </p>
           </div>
 
           {/* Market Analysis */}
           <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
-            <h2 className="text-xl font-semibold text-gray-900 mb-3">Market Analysis</h2>
+            <h2 className="text-xl font-semibold text-gray-900 mb-3">Business Canvas</h2>
             <p className="text-gray-600">
-              In-depth market research and competitor analysis to identify opportunities.
+              The solidity of a business plan with the flexibility of a canvas.
             </p>
           </div>
         </div>

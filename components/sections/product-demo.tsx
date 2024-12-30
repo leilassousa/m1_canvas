@@ -11,28 +11,28 @@ const features = [
     icon: FileQuestion,
     title: 'Answer Simple Questions',
     description: 'Our tool guides you through each canvas section—Audience, Problem, Solution, Revenue, and more—prompting you with easy, intuitive questions.',
-    image: 'https://images.unsplash.com/photo-1460925895917-afdab827c52f?ixlib=rb-4.0.3&auto=format&fit=crop&w=1950&q=80'
+    image: '/landing_page/demo1.jpg'
   },
   {
     id: 'mobile',
     icon: SlidersVertical,
     title: 'Track Confidence & Knowledge',
     description: 'We measure your comfort level after each question, so you know where you might need extra help or validation.',
-    image: 'https://images.unsplash.com/photo-1512941937669-90a1b58e7e9c?ixlib=rb-4.0.3&auto=format&fit=crop&w=1950&q=80'
+    image: '/landing_page/demo2.jpg'
   },
   {
     id: 'customization',
     icon: Bot,
     title: 'Get Personalized AI Insights',
     description: 'Once you’re done, our AI analyzes your answers and generates a clear, actionable report to help you fine-tune your strategy and next steps.',
-    image: 'https://images.unsplash.com/photo-1454165804606-c3d57bc86b40?ixlib=rb-4.0.3&auto=format&fit=crop&w=1950&q=80'
+    image: '/landing_page/demo4.jpg'
   },
   {
     id: 'security',
     icon: Share2,
     title: 'Download or Share',
     description: 'Download your one-page business canvas as a PDF or share it online to get feedback from partners, mentors, or investors.',
-    image: 'https://images.unsplash.com/photo-1563986768609-322da13575f3?ixlib=rb-4.0.3&auto=format&fit=crop&w=1950&q=80'
+    image: '/landing_page/demo3.jpg'
   }
 ];
 
