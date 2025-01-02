@@ -8,6 +8,7 @@ import { useEffect, useState } from 'react';
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 import { toast } from '@/components/ui/use-toast';
 import type { Database } from '@/types/supabase';
+import { useAuth } from '@/lib/auth/auth-context';
 
 interface Assessment {
   id: string;
@@ -18,55 +19,81 @@ interface Assessment {
 
 export function ReportsSection() {
   const router = useRouter();
-  const supabase = createClientComponentClient<Database>();
   const [assessments, setAssessments] = useState<Assessment[]>([]);
   const [loading, setLoading] = useState(true);
+  const { user } = useAuth();
+  const supabase = createClientComponentClient<Database>();
 
   useEffect(() => {
-    async function fetchCompletedAssessments() {
-      try {
-        console.log('Fetching completed assessments...'); // Debug log
+    let mounted = true;
 
-        const { data: sessionData } = await supabase.auth.getSession();
-        
-        if (!sessionData.session) {
-          console.log('No active session found'); // Debug log
-          return;
-        }
+    async function fetchCompletedAssessments() {
+      if (!mounted || !user) return;
+
+      try {
+        setLoading(true);
+        console.log('Starting fetch with user:', user.id);
 
         const { data, error } = await supabase
           .from('assessments')
-          .select('*')
-          .eq('user_id', sessionData.session.user.id)
+          .select('id, title, created_at, status')
+          .eq('user_id', user.id)
           .eq('status', 'completed')
-          .order('created_at', { ascending: false })
-          .limit(5); // Show last 5 completed assessments
+          .order('created_at', { ascending: false });
 
         if (error) {
-          console.error('Error fetching assessments:', error); // Debug log
+          console.error('Database error:', error);
           throw error;
         }
 
-        console.log('Fetched assessments:', data); // Debug log
-        setAssessments(data || []);
+        if (mounted) {
+          console.log('Successfully fetched assessments:', data);
+          setAssessments(data || []);
+        }
       } catch (error) {
-        console.error('Error:', error);
+        console.error('Error in fetchCompletedAssessments:', error);
         toast({
           title: "Error",
-          description: "Failed to load assessments",
+          description: "Failed to load assessments. Please try refreshing the page.",
           variant: "destructive",
         });
+        setAssessments([]);
       } finally {
-        setLoading(false);
+        if (mounted) {
+          setLoading(false);
+        }
       }
     }
 
     fetchCompletedAssessments();
-  }, [supabase]);
+
+    // Set up real-time subscription for assessments
+    const assessmentsSubscription = supabase
+      .channel('assessments_changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'assessments',
+          filter: `user_id=eq.${user?.id}`
+        },
+        () => {
+          console.log('Assessment changed, refreshing...');
+          fetchCompletedAssessments();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      mounted = false;
+      assessmentsSubscription.unsubscribe();
+    };
+  }, [supabase, user]);
 
   const handleViewReport = (assessmentId: string) => {
-    console.log('Navigating to report for assessment:', assessmentId); // Debug log
-    router.push(`/reports?assessment_id=${assessmentId}`);
+    console.log('Navigating to report:', assessmentId);
+    router.push(`/reports/${assessmentId}`);
   };
 
   if (loading) {
@@ -74,6 +101,22 @@ export function ReportsSection() {
       <Card className="p-6 bg-white h-[600px]">
         <div className="flex items-center justify-center h-full">
           <p className="text-gray-500">Loading assessments...</p>
+        </div>
+      </Card>
+    );
+  }
+
+  if (!user) {
+    return (
+      <Card className="p-6 bg-white h-[600px]">
+        <div className="flex flex-col items-center justify-center h-full space-y-4">
+          <p className="text-gray-500">Please log in to view your assessments</p>
+          <Button 
+            onClick={() => router.push('/auth')}
+            variant="outline"
+          >
+            Log In
+          </Button>
         </div>
       </Card>
     );

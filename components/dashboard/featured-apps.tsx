@@ -16,7 +16,7 @@ const featuredApps = [
 export function FeaturedApps() {
   return (
     <Card className="p-6 bg-white">
-      <h2 className="text-base font-semibold mb-4">Featured Applications</h2>
+      <h2 className="text-base font-semibold mb-4">Announcements</h2>
 
       <div className="space-y-4">
         {featuredApps.map((app) => (
