@@ -5,6 +5,7 @@ import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 import { toast } from '@/components/ui/use-toast';
 import { AnswersGrid } from "@/components/reports/answer-grid/answers-grid";
 import { ClientCharts } from "@/components/reports/analytics/client-charts";
+import { AIInsights } from "@/components/reports/ai-insights";
 import type { Database } from '@/types/supabase';
 import { PrintableReport } from '@/components/reports/printable-report';
 import { Button } from '@/components/ui/button';
@@ -116,6 +117,8 @@ export default function ReportPage() {
   }, [answers]);
 
   const handlePrint = () => {
+    console.log('Initiating print...'); // Debug log
+    
     // Add print-exact-colors class to body before printing
     document.body.classList.add('print-exact-colors');
     
@@ -205,7 +208,7 @@ export default function ReportPage() {
       </div>
 
       {/* Report content - visible both on screen and print */}
-      <div className="print-block">
+      <div className="print-block space-y-12">
         {/* Title for print version */}
         <div className="hidden print-block mb-8">
           <h1 className="text-3xl font-bold text-center">Assessment Report</h1>
@@ -214,10 +217,9 @@ export default function ReportPage() {
           </p>
         </div>
 
-        {/* Answers Grid Section */}
+        {/* AI Insights Section */}
         <section className="mb-12">
-          <h2 className="mb-6 text-2xl font-semibold">Answers by Category</h2>
-          <AnswersGrid answers={answers} />
+          <AIInsights assessmentData={{ answers }} />
         </section>
 
         {/* Analytics Section */}
@@ -235,10 +237,10 @@ export default function ReportPage() {
           </div>
         </section>
 
-        {/* AI Analysis Section - To be implemented */}
+        {/* Answers Grid Section */}
         <section className="mb-12">
-          <h2 className="mb-6 text-2xl font-semibold">AI Analysis</h2>
-          {/* TODO: Add AI analysis component */}
+          <h2 className="mb-6 text-2xl font-semibold">Answers by Category</h2>
+          <AnswersGrid answers={answers} />
         </section>
       </div>
     </div>
