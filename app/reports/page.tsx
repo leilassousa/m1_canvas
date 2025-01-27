@@ -4,6 +4,7 @@ import { useEffect, useState, useMemo } from 'react';
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 import { toast } from '@/components/ui/use-toast';
 import { AnswersGrid } from "@/components/reports/answer-grid/answers-grid";
+import { AIInsights } from "@/components/reports/ai-insights";
 import type { Database } from '@/types/supabase';
 import { Button } from '@/components/ui/button';
 import { Printer } from 'lucide-react';
@@ -42,6 +43,7 @@ export default function ReportPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const supabase = createClientComponentClient<Database>();
+  const [currentAssessmentId, setCurrentAssessmentId] = useState<string | null>(null);
 
   // Calculate category averages for charts
   const { confidenceData, knowledgeData, chartOptions } = useMemo(() => {
@@ -173,6 +175,11 @@ export default function ReportPage() {
         console.log('Fetched answers:', data); // Debug log
         setAnswers(data || []);
         
+        // Store the first assessment ID (we'll use this for the AI insights)
+        if (data && data.length > 0) {
+          setCurrentAssessmentId(data[0].assessment_id);
+        }
+
       } catch (error) {
         console.error('Error fetching answers:', error);
         setError('Failed to load report data. Please try again later.');
@@ -236,6 +243,22 @@ export default function ReportPage() {
           </p>
         </div>
 
+        {/* Answers Grid Section */}
+        <section className="mb-12">
+          <h2 className="mb-6 text-2xl font-semibold">Answers by Category</h2>
+          <AnswersGrid answers={answers} />
+        </section>
+
+        {/* AI Business Canvas Analysis */}
+        {answers.length > 0 && currentAssessmentId && (
+          <section className="mb-12">
+            <AIInsights 
+              assessmentData={{ answers }} 
+              assessmentId={currentAssessmentId}
+            />
+          </section>
+        )}
+
         {/* Analytics Section */}
         <section className="mb-12">
           <h2 className="mb-6 text-2xl font-semibold">Performance Analytics</h2>
@@ -249,12 +272,6 @@ export default function ReportPage() {
               <Bar options={chartOptions} data={knowledgeData} />
             </div>
           </div>
-        </section>
-
-        {/* Answers Grid Section */}
-        <section className="mb-12">
-          <h2 className="mb-6 text-2xl font-semibold">Answers by Category</h2>
-          <AnswersGrid answers={answers} />
         </section>
       </div>
     </div>
