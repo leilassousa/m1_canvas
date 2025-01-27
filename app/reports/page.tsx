@@ -4,10 +4,7 @@ import { useEffect, useState, useMemo } from 'react';
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 import { toast } from '@/components/ui/use-toast';
 import { AnswersGrid } from "@/components/reports/answer-grid/answers-grid";
-import { ClientCharts } from "@/components/reports/analytics/client-charts";
-import { AIInsights } from "@/components/reports/ai-insights";
 import type { Database } from '@/types/supabase';
-import { PrintableReport } from '@/components/reports/printable-report';
 import { Button } from '@/components/ui/button';
 import { Printer } from 'lucide-react';
 import {
@@ -43,6 +40,7 @@ interface Answer {
 export default function ReportPage() {
   const [answers, setAnswers] = useState<Answer[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const supabase = createClientComponentClient<Database>();
 
   // Calculate category averages for charts
@@ -177,6 +175,7 @@ export default function ReportPage() {
         
       } catch (error) {
         console.error('Error fetching answers:', error);
+        setError('Failed to load report data. Please try again later.');
         toast({
           title: "Error",
           description: "Failed to load report data",
@@ -191,7 +190,27 @@ export default function ReportPage() {
   }, [supabase]);
 
   if (loading) {
-    return <div>Loading...</div>;
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-lg text-gray-500">Loading report data...</div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-lg text-red-500">{error}</div>
+      </div>
+    );
+  }
+
+  if (!answers.length) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-lg text-gray-500">No assessment data available.</div>
+      </div>
+    );
   }
 
   return (
@@ -216,11 +235,6 @@ export default function ReportPage() {
             Generated on {new Date().toLocaleDateString()}
           </p>
         </div>
-
-        {/* AI Insights Section */}
-        <section className="mb-12">
-          <AIInsights assessmentData={{ answers }} />
-        </section>
 
         {/* Analytics Section */}
         <section className="mb-12">
