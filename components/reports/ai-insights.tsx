@@ -43,14 +43,25 @@ export function AIInsights({ assessmentData, assessmentId }: AIInsightsProps) {
   useEffect(() => {
     async function loadInsights() {
       try {
+        // Get current user
+        const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+        
+        if (sessionError) throw sessionError;
+        if (!session?.user?.id) throw new Error('No authenticated user found');
+
         const { data: savedInsights, error } = await supabase
           .from('ai_insights')
           .select('*')
-          .eq('assessment_id', assessmentId);
+          .eq('assessment_id', assessmentId)
+          .eq('user_id', session.user.id);
 
-        if (error) throw error;
+        if (error) {
+          console.error('Error fetching insights:', error);
+          throw new Error('Failed to load saved insights');
+        }
 
         if (savedInsights && savedInsights.length > 0) {
+          console.log('Found saved insights:', savedInsights.length);
           const formattedInsights = savedInsights.map(insight => ({
             category: insight.category,
             strengths: insight.strengths as string[],
@@ -61,12 +72,21 @@ export function AIInsights({ assessmentData, assessmentId }: AIInsightsProps) {
           }));
           setInsights(formattedInsights);
         } else {
+          console.log('No saved insights found, generating new ones');
           // No saved insights, generate new ones
           generateInsights();
         }
       } catch (err) {
         console.error('Error loading insights:', err);
-        setError('Failed to load AI insights');
+        const errorMessage = err instanceof Error 
+          ? err.message 
+          : 'Failed to load AI insights';
+        setError(errorMessage);
+        toast({
+          title: "Error",
+          description: errorMessage,
+          variant: "destructive",
+        });
       } finally {
         setLoading(false);
       }
@@ -87,6 +107,12 @@ export function AIInsights({ assessmentData, assessmentId }: AIInsightsProps) {
       if (!apiKey) {
         throw new Error('Anthropic API key not configured');
       }
+
+      // Get current user
+      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+      
+      if (sessionError) throw sessionError;
+      if (!session?.user?.id) throw new Error('No authenticated user found');
       
       // Initialize agent and generate insights
       const agent = new ReportAgent(apiKey);
@@ -97,6 +123,7 @@ export function AIInsights({ assessmentData, assessmentId }: AIInsightsProps) {
         .upsert(
           generatedInsights.map(insight => ({
             assessment_id: assessmentId,
+            user_id: session.user.id,
             category: insight.category,
             strengths: insight.strengths,
             weaknesses: insight.weaknesses,
@@ -106,7 +133,10 @@ export function AIInsights({ assessmentData, assessmentId }: AIInsightsProps) {
           }))
         );
 
-      if (saveError) throw saveError;
+      if (saveError) {
+        console.error('Error saving insights:', saveError);
+        throw new Error('Failed to save insights to database');
+      }
       
       setInsights(generatedInsights);
       toast({
@@ -115,10 +145,13 @@ export function AIInsights({ assessmentData, assessmentId }: AIInsightsProps) {
       });
     } catch (err) {
       console.error('Error generating insights:', err);
-      setError(err instanceof Error ? err.message : 'Failed to generate AI insights');
+      const errorMessage = err instanceof Error 
+        ? err.message 
+        : 'Failed to generate AI insights';
+      setError(errorMessage);
       toast({
         title: "Error",
-        description: "Failed to generate AI insights",
+        description: errorMessage,
         variant: "destructive",
       });
     } finally {
