@@ -2,22 +2,54 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Check } from 'lucide-react';
+import { Check, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { SUBSCRIPTION_TIERS } from '@/lib/stripe';
 import { useToast } from '@/components/ui/use-toast';
+import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 
 export function PricingCards() {
   const router = useRouter();
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState<string | null>(null);
   const [couponCode, setCouponCode] = useState('');
+  const supabase = createClientComponentClient();
 
   const handleSubscribe = async (priceId: string) => {
     try {
       setIsLoading(priceId);
+
+      // Check if user is authenticated
+      const { data: { session }, error: authError } = await supabase.auth.getSession();
+      
+      if (authError || !session) {
+        toast({
+          title: 'Authentication Required',
+          description: 'Please log in to subscribe',
+          variant: 'destructive',
+        });
+        router.push('/auth');
+        return;
+      }
+
+      // Check if user already has an active subscription
+      const { data: profile, error: profileError } = await supabase
+        .from('profiles')
+        .select('subscription_status')
+        .eq('id', session.user.id)
+        .single();
+
+      if (profile?.subscription_status === 'active') {
+        toast({
+          title: 'Subscription Active',
+          description: 'You already have an active subscription',
+          variant: 'default',
+        });
+        router.push('/dashboard');
+        return;
+      }
       
       const response = await fetch('/api/checkout', {
         method: 'POST',
@@ -33,7 +65,7 @@ export function PricingCards() {
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.error || 'Something went wrong');
+        throw new Error(data.error || data.details || 'Something went wrong');
       }
 
       // Redirect to Stripe Checkout
@@ -71,7 +103,7 @@ export function PricingCards() {
                 <div className="mt-4 space-y-2">
                   {tier.features.map((feature) => (
                     <div key={feature} className="flex items-center">
-                      <Check className="h-5 w-5 text-green-500 mr-2" />
+                      <Check className="h-5 w-5 text-green-500 mr-2 flex-shrink-0" />
                       <span>{feature}</span>
                     </div>
                   ))}
@@ -82,9 +114,16 @@ export function PricingCards() {
                 <Button
                   className="w-full"
                   onClick={() => handleSubscribe(tier.priceId)}
-                  disabled={isLoading === tier.priceId}
+                  disabled={isLoading !== null}
                 >
-                  {isLoading === tier.priceId ? 'Processing...' : 'Subscribe'}
+                  {isLoading === tier.priceId ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Processing...
+                    </>
+                  ) : (
+                    'Subscribe'
+                  )}
                 </Button>
               </div>
             </div>

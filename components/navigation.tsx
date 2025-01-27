@@ -19,8 +19,7 @@ export function Navigation() {
   const mainLinks = [
     { href: '/', label: 'Home' },
     { href: '/about', label: 'About' },
-    { href: '/assessment', label: 'Assessment' },
-    { href: '/dashboard', label: 'Dashboard' },
+    { href: '/pricing', label: 'Pricing' },
   ];
 
   const moreLinks = [
@@ -28,6 +27,8 @@ export function Navigation() {
     { href: '/admin', label: 'Admin' },
     { href: '/about/solutions', label: 'Solutions' },
     { href: '/about/contact', label: 'Contact' },
+    { href: '/assessment', label: 'Assessment' },
+    { href: '/dashboard', label: 'Dashboard' },
   ];
 
   return (

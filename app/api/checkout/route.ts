@@ -21,6 +21,7 @@ export async function POST(request: Request) {
     }
 
     if (!session) {
+      console.error('No session found');
       return NextResponse.json(
         { error: 'Please log in to continue' },
         { status: 401 }
@@ -28,13 +29,32 @@ export async function POST(request: Request) {
     }
 
     // Get the price ID and coupon from the request
-    const { priceId, couponId } = await request.json();
+    const body = await request.json();
+    console.log('Request body:', body);
+
+    const { priceId, couponId } = body;
 
     if (!priceId) {
+      console.error('No priceId provided');
       return NextResponse.json(
         { error: 'Price ID is required' },
         { status: 400 }
       );
+    }
+
+    // Ensure profile exists
+    const { data: profile, error: profileError } = await supabase
+      .from('profiles')
+      .select('subscription_status')
+      .eq('id', session.user.id)
+      .single();
+
+    if (profileError) {
+      console.error('Profile error:', profileError);
+      // Create profile if it doesn't exist
+      await supabase
+        .from('profiles')
+        .insert({ id: session.user.id, subscription_status: 'inactive' });
     }
 
     const baseUrl = process.env.NEXT_PUBLIC_APP_URL;
@@ -46,19 +66,12 @@ export async function POST(request: Request) {
       );
     }
 
-    // Check if user already has an active subscription
-    const { data: profile } = await supabase
-      .from('profiles')
-      .select('subscription_status, subscription_id')
-      .eq('id', session.user.id)
-      .single();
-
-    if (profile?.subscription_status === 'active') {
-      return NextResponse.json(
-        { error: 'You already have an active subscription' },
-        { status: 400 }
-      );
-    }
+    console.log('Creating checkout session with:', {
+      priceId,
+      couponId,
+      userId: session.user.id,
+      email: session.user.email
+    });
 
     // Create a Stripe checkout session
     const checkoutSession = await stripe.checkout.sessions.create({
@@ -84,21 +97,22 @@ export async function POST(request: Request) {
         metadata: {
           userId: session.user.id,
         },
-        trial_period_days: 14, // Add 14-day trial
+        trial_period_days: 14,
       },
     });
 
     if (!checkoutSession.url) {
-      console.error('Failed to create checkout URL');
+      console.error('No checkout URL in session');
       return NextResponse.json(
         { error: 'Failed to create checkout session' },
         { status: 500 }
       );
     }
 
+    console.log('Checkout session created:', checkoutSession.id);
     return NextResponse.json({ url: checkoutSession.url });
   } catch (error) {
-    console.error('Checkout error:', error);
+    console.error('Checkout error details:', error);
     return NextResponse.json(
       { 
         error: 'Internal server error',
