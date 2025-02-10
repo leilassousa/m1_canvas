@@ -1,27 +1,27 @@
 'use client';
 
-import { ScanEye, BrickWall, Grid2x2Plus, Hourglass } from 'lucide-react';
+import { Lightbulb, Clock, Users, Wallet } from 'lucide-react';
 
 const benefits = [
   {
-    icon: ScanEye,
-    title: 'Visual and Intuitive',
-    description: 'Making complex business concepts more accessible.'
+    icon: Lightbulb,
+    title: 'AI-Powered Insights',
+    description: 'Get personalized recommendations and actionable insights to strengthen your business model.'
   },
   {
-    icon: BrickWall,
-    title: 'Helps Identify Gaps',
-    description: 'without getting overwhelmed by details.'
+    icon: Clock,
+    title: 'Save Time & Effort',
+    description: 'Create a professional business canvas in minutes, not hours.'
   },
   {
-    icon: Grid2x2Plus,
-    title: 'Flexibility',
-    description: 'Test different ideas quickly, facilitate discussion with partners and team members.'
+    icon: Users,
+    title: 'Collaborate with Ease',
+    description: 'Share your canvas with your team or investors and collaborate in real-time.'
   },
   {
-    icon: Hourglass,
-    title: 'Time Friendly',
-    description: 'Our minimalistic interface makes it easier for you to focus on what really matters.'
+    icon: Wallet,
+    title: 'Affordable & Accessible',
+    description: 'No expensive consultants or complex software – just simple, affordable pricing.'
   }
 ];
 
@@ -31,13 +31,10 @@ export function BenefitsSection() {
       <div className="container mx-auto px-4">
         <div className="text-center mb-16">
           <h2 className="text-3xl font-bold text-gray-900 mb-4">
-          One-Page Plan. Zero Overwhelm.
+            Why Choose Our Business Canvas Builder?
           </h2>
           <p className="text-lg text-gray-600 max-w-3xl mx-auto">
-          Tired of wrestling with never-ending business plans? 
-          </p>
-          <p className="text-lg text-gray-600 max-w-3xl mx-auto">
-          Our Business Canva Builder simplifies everything into a single, interactive page. No matter if you’re a first-time business owner, freelancer, or budding entrepreneur—you can finally turn your idea into a structured plan in under 30 minutes.
+            Transform your business idea into a structured, actionable plan with our AI-powered platform.
           </p>
         </div>
 

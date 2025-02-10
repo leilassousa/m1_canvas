@@ -29,17 +29,17 @@ export function HeroSection() {
         <div className="container mx-auto px-4">
           <div className="max-w-2xl text-white">
             <h1 className="text-4xl md:text-5xl font-bold mb-6 leading-tight">
-            Build Your Business Canvas in Minutes—No MBA Required.
+              Build Your Business Model in Minutes – Powered by AI
             </h1>
             <p className="text-lg md:text-xl mb-8 text-gray-100">
-            Get instant clarity on your business idea, boost your confidence, and receive personalized AI insights to guide you every step of the way.
+              Create a professional, structured business canvas with actionable insights for your business.
             </p>
-            <Link href="/auth">
+            <Link href="/pricing">
               <Button 
                 className="bg-orange-600 hover:bg-orange-700 text-white px-6 py-2"
                 size="lg"
               >
-                Learn More
+                Get Started
                 <ArrowRight className="ml-2 h-5 w-5" />
               </Button>
             </Link>
