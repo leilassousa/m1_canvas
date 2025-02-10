@@ -258,21 +258,6 @@ export default function ReportPage() {
             />
           </section>
         )}
-
-        {/* Analytics Section */}
-        <section className="mb-12">
-          <h2 className="mb-6 text-2xl font-semibold">Performance Analytics</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="bg-card p-6 rounded-lg shadow-sm print-chart">
-              <h3 className="text-lg font-semibold mb-4 text-center">Confidence Levels by Category</h3>
-              <Bar options={chartOptions} data={confidenceData} />
-            </div>
-            <div className="bg-card p-6 rounded-lg shadow-sm print-chart">
-              <h3 className="text-lg font-semibold mb-4 text-center">Knowledge Levels by Category</h3>
-              <Bar options={chartOptions} data={knowledgeData} />
-            </div>
-          </div>
-        </section>
       </div>
     </div>
   );

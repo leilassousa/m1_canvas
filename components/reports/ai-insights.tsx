@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { Card } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { ReportAgent } from '@/lib/agents/report-agent';
@@ -9,6 +9,26 @@ import { ChevronDown, ChevronUp, Brain, Loader2, RefreshCw } from 'lucide-react'
 import { Button } from '@/components/ui/button';
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 import { toast } from '@/components/ui/use-toast';
+import {
+  Chart as ChartJS,
+  CategoryScale,
+  LinearScale,
+  BarElement,
+  Title,
+  Tooltip,
+  Legend
+} from 'chart.js';
+import { Bar } from 'react-chartjs-2';
+
+// Register ChartJS components
+ChartJS.register(
+  CategoryScale,
+  LinearScale,
+  BarElement,
+  Title,
+  Tooltip,
+  Legend
+);
 
 interface AIInsightsProps {
   assessmentData: {
@@ -39,64 +59,6 @@ export function AIInsights({ assessmentData, assessmentId }: AIInsightsProps) {
   const [expandedCategories, setExpandedCategories] = useState<string[]>([]);
   const supabase = createClientComponentClient();
 
-  // Load saved insights
-  useEffect(() => {
-    async function loadInsights() {
-      try {
-        // Get current user
-        const { data: { session }, error: sessionError } = await supabase.auth.getSession();
-        
-        if (sessionError) throw sessionError;
-        if (!session?.user?.id) throw new Error('No authenticated user found');
-
-        const { data: savedInsights, error } = await supabase
-          .from('ai_insights')
-          .select('*')
-          .eq('assessment_id', assessmentId)
-          .eq('user_id', session.user.id);
-
-        if (error) {
-          console.error('Error fetching insights:', error);
-          throw new Error('Failed to load saved insights');
-        }
-
-        if (savedInsights && savedInsights.length > 0) {
-          console.log('Found saved insights:', savedInsights.length);
-          const formattedInsights = savedInsights.map(insight => ({
-            category: insight.category,
-            strengths: insight.strengths as string[],
-            weaknesses: insight.weaknesses as string[],
-            recommendations: insight.recommendations as string[],
-            confidence_analysis: insight.confidence_analysis,
-            knowledge_analysis: insight.knowledge_analysis,
-          }));
-          setInsights(formattedInsights);
-        } else {
-          console.log('No saved insights found, generating new ones');
-          // No saved insights, generate new ones
-          generateInsights();
-        }
-      } catch (err) {
-        console.error('Error loading insights:', err);
-        const errorMessage = err instanceof Error 
-          ? err.message 
-          : 'Failed to load AI insights';
-        setError(errorMessage);
-        toast({
-          title: "Error",
-          description: errorMessage,
-          variant: "destructive",
-        });
-      } finally {
-        setLoading(false);
-      }
-    }
-
-    if (assessmentId) {
-      loadInsights();
-    }
-  }, [assessmentId, supabase]);
-
   const generateInsights = async () => {
     setGenerating(true);
     setError(null);
@@ -118,9 +80,23 @@ export function AIInsights({ assessmentData, assessmentId }: AIInsightsProps) {
       const agent = new ReportAgent(apiKey);
       const generatedInsights = await agent.analyzeAssessment(assessmentData);
       
-      // Save insights to Supabase
+      console.log('Generated new insights:', generatedInsights); // Debug log
+
+      // First, delete any existing insights for this assessment
+      const { error: deleteError } = await supabase
+        .from('ai_insights')
+        .delete()
+        .eq('assessment_id', assessmentId)
+        .eq('user_id', session.user.id);
+
+      if (deleteError) {
+        console.error('Error deleting old insights:', deleteError);
+        throw new Error('Failed to clean up old insights');
+      }
+      
+      // Then save the new insights
       const { error: saveError } = await supabase.from('ai_insights')
-        .upsert(
+        .insert(
           generatedInsights.map(insight => ({
             assessment_id: assessmentId,
             user_id: session.user.id,
@@ -159,6 +135,77 @@ export function AIInsights({ assessmentData, assessmentId }: AIInsightsProps) {
     }
   };
 
+  // Load saved insights
+  useEffect(() => {
+    const loadInsights = async () => {
+      try {
+        // Get current user
+        const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+        
+        if (sessionError) throw sessionError;
+        if (!session?.user?.id) throw new Error('No authenticated user found');
+
+        const { data: savedInsights, error } = await supabase
+          .from('ai_insights')
+          .select('*')
+          .eq('assessment_id', assessmentId)
+          .eq('user_id', session.user.id)
+          .order('category');  // Add ordering to ensure consistent order
+
+        if (error) {
+          console.error('Error fetching insights:', error);
+          throw new Error('Failed to load saved insights');
+        }
+
+        if (savedInsights && savedInsights.length > 0) {
+          console.log('Raw saved insights:', savedInsights); // Debug log
+          
+          // Create a Map to store unique insights by category
+          const uniqueInsights = new Map();
+          
+          savedInsights.forEach(insight => {
+            if (!uniqueInsights.has(insight.category)) {
+              uniqueInsights.set(insight.category, {
+                category: insight.category,
+                strengths: insight.strengths as string[],
+                weaknesses: insight.weaknesses as string[],
+                recommendations: insight.recommendations as string[],
+                confidence_analysis: insight.confidence_analysis,
+                knowledge_analysis: insight.knowledge_analysis,
+              });
+            }
+          });
+          
+          const formattedInsights = Array.from(uniqueInsights.values());
+          console.log('Formatted unique insights:', formattedInsights); // Debug log
+          
+          setInsights(formattedInsights);
+        } else {
+          console.log('No saved insights found, generating new ones');
+          // No saved insights, generate new ones
+          await generateInsights();
+        }
+      } catch (err) {
+        console.error('Error loading insights:', err);
+        const errorMessage = err instanceof Error 
+          ? err.message 
+          : 'Failed to load AI insights';
+        setError(errorMessage);
+        toast({
+          title: "Error",
+          description: errorMessage,
+          variant: "destructive",
+        });
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    if (assessmentId) {
+      loadInsights();
+    }
+  }, [assessmentId, assessmentData, supabase]);
+
   const toggleCategory = (category: string) => {
     setExpandedCategories(prev =>
       prev.includes(category)
@@ -166,6 +213,77 @@ export function AIInsights({ assessmentData, assessmentId }: AIInsightsProps) {
         : [...prev, category]
     );
   };
+
+  // Calculate category averages for charts
+  const { confidenceData, knowledgeData, chartOptions } = useMemo(() => {
+    // Calculate averages by category
+    const categoryAverages = assessmentData.answers.reduce((acc, answer) => {
+      if (!acc[answer.category]) {
+        acc[answer.category] = {
+          confidenceSum: 0,
+          knowledgeSum: 0,
+          count: 0,
+        };
+      }
+      
+      acc[answer.category].confidenceSum += answer.confidence_value;
+      acc[answer.category].knowledgeSum += answer.knowledge_value;
+      acc[answer.category].count += 1;
+      
+      return acc;
+    }, {} as Record<string, { confidenceSum: number; knowledgeSum: number; count: number; }>);
+
+    const categories = Object.keys(categoryAverages).sort();
+    
+    return {
+      confidenceData: {
+        labels: categories,
+        datasets: [{
+          label: 'Confidence Level',
+          data: categories.map(cat => 
+            +(categoryAverages[cat].confidenceSum / categoryAverages[cat].count).toFixed(1)
+          ),
+          backgroundColor: 'rgba(53, 162, 235, 0.7)',
+          borderRadius: 4,
+        }]
+      },
+      knowledgeData: {
+        labels: categories,
+        datasets: [{
+          label: 'Knowledge Level',
+          data: categories.map(cat => 
+            +(categoryAverages[cat].knowledgeSum / categoryAverages[cat].count).toFixed(1)
+          ),
+          backgroundColor: 'rgba(75, 192, 192, 0.7)',
+          borderRadius: 4,
+        }]
+      },
+      chartOptions: {
+        responsive: true,
+        plugins: {
+          legend: {
+            display: false,
+          },
+          tooltip: {
+            callbacks: {
+              label: (context: any) => {
+                return `${context.dataset.label}: ${context.parsed.y.toFixed(1)}/10`;
+              },
+            },
+          },
+        },
+        scales: {
+          y: {
+            beginAtZero: true,
+            max: 10,
+            ticks: {
+              stepSize: 1,
+            },
+          },
+        },
+      }
+    };
+  }, [assessmentData.answers]);
 
   if (loading) {
     return (
@@ -211,7 +329,22 @@ export function AIInsights({ assessmentData, assessmentId }: AIInsightsProps) {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-12">
+      {/* Performance Analytics Section */}
+      <section>
+        <h2 className="text-2xl font-semibold mb-6">Performance Analytics</h2>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="bg-card p-6 rounded-lg shadow-sm print-chart">
+            <h3 className="text-lg font-semibold mb-4 text-center">Confidence Levels by Category</h3>
+            <Bar options={chartOptions} data={confidenceData} />
+          </div>
+          <div className="bg-card p-6 rounded-lg shadow-sm print-chart">
+            <h3 className="text-lg font-semibold mb-4 text-center">Knowledge Levels by Category</h3>
+            <Bar options={chartOptions} data={knowledgeData} />
+          </div>
+        </div>
+      </section>
+
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
@@ -241,8 +374,8 @@ export function AIInsights({ assessmentData, assessmentId }: AIInsightsProps) {
 
       {/* Category Insights */}
       <div className="space-y-4">
-        {insights.map((insight) => (
-          <Card key={insight.category} className="p-6">
+        {insights.map((insight, index) => (
+          <Card key={`${insight.category}-${index}`} className="p-6">
             <button
               onClick={() => toggleCategory(insight.category)}
               className="w-full flex items-center justify-between"
@@ -269,8 +402,8 @@ export function AIInsights({ assessmentData, assessmentId }: AIInsightsProps) {
                 <div>
                   <h4 className="font-medium text-green-600 mb-2">Strengths</h4>
                   <ul className="list-disc list-inside space-y-1">
-                    {insight.strengths.map((strength, index) => (
-                      <li key={index} className="text-sm">{strength}</li>
+                    {insight.strengths.map((strength, strengthIndex) => (
+                      <li key={`${insight.category}-strength-${strengthIndex}`} className="text-sm">{strength}</li>
                     ))}
                   </ul>
                 </div>
@@ -279,8 +412,8 @@ export function AIInsights({ assessmentData, assessmentId }: AIInsightsProps) {
                 <div>
                   <h4 className="font-medium text-red-600 mb-2">Areas for Improvement</h4>
                   <ul className="list-disc list-inside space-y-1">
-                    {insight.weaknesses.map((weakness, index) => (
-                      <li key={index} className="text-sm">{weakness}</li>
+                    {insight.weaknesses.map((weakness, weaknessIndex) => (
+                      <li key={`${insight.category}-weakness-${weaknessIndex}`} className="text-sm">{weakness}</li>
                     ))}
                   </ul>
                 </div>
@@ -298,8 +431,8 @@ export function AIInsights({ assessmentData, assessmentId }: AIInsightsProps) {
                 <div>
                   <h4 className="font-medium text-blue-600 mb-2">Recommendations</h4>
                   <ul className="list-disc list-inside space-y-1">
-                    {insight.recommendations.map((rec, index) => (
-                      <li key={index} className="text-sm">{rec}</li>
+                    {insight.recommendations.map((rec, recIndex) => (
+                      <li key={`${insight.category}-rec-${recIndex}`} className="text-sm">{rec}</li>
                     ))}
                   </ul>
                 </div>
