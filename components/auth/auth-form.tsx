@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -29,6 +29,15 @@ export function AuthForm({ mode }: AuthFormProps) {
   const { signIn, signUp } = useAuth();
   const router = useRouter();
 
+  useEffect(() => {
+    // Check for beta code in URL params
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('mode') === 'register') {
+      // Set the form to register mode if coming from beta code flow
+      router.replace('/auth?mode=register');
+    }
+  }, [router]);
+
   const {
     register,
     handleSubmit,
@@ -44,9 +53,23 @@ export function AuthForm({ mode }: AuthFormProps) {
     try {
       if (mode === 'login') {
         await signIn(data.email, data.password);
-        router.push('/dashboard'); // Redirect to dashboard after login
+        router.push('/dashboard');
       } else {
-        await signUp(data.email, data.password);
+        // Get beta code from localStorage if exists
+        const betaCode = localStorage.getItem('betaCode');
+        
+        // Include beta code in redirect URL if exists
+        const redirectTo = betaCode 
+          ? `${window.location.origin}/auth/callback?beta_code=${betaCode}`
+          : `${window.location.origin}/auth/callback`;
+
+        await signUp(data.email, data.password, {
+          emailRedirectTo: redirectTo,
+        });
+
+        // Clear beta code from localStorage
+        localStorage.removeItem('betaCode');
+        
         // Show success message for registration
         setError('Please check your email to verify your account.');
       }

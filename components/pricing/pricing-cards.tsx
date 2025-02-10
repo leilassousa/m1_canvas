@@ -6,7 +6,7 @@ import { Check, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
-import { SUBSCRIPTION_TIERS } from '@/lib/stripe';
+import { SUBSCRIPTION_TIERS, isBetaCode } from '@/lib/stripe';
 import { useToast } from '@/components/ui/use-toast';
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 
@@ -21,7 +21,23 @@ export function PricingCards() {
     try {
       setIsLoading(priceId);
 
-      // Check if user is authenticated
+      // First check if it's a beta code
+      if (couponCode && isBetaCode(couponCode)) {
+        // Store beta code in localStorage for later use after signup
+        localStorage.setItem('betaCode', couponCode.toUpperCase());
+        
+        toast({
+          title: 'Valid Beta Code',
+          description: 'Please sign up to activate your beta access.',
+          variant: 'default',
+        });
+
+        // Redirect to auth page with signup tab active
+        router.push('/auth?mode=register');
+        return;
+      }
+
+      // For non-beta codes, proceed with normal flow
       const { data: { session }, error: authError } = await supabase.auth.getSession();
       
       if (authError || !session) {
@@ -51,6 +67,7 @@ export function PricingCards() {
         return;
       }
       
+      // If not a beta code, proceed with normal Stripe checkout
       const response = await fetch('/api/checkout', {
         method: 'POST',
         headers: {

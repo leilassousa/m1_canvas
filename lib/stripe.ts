@@ -54,4 +54,11 @@ export const formatPrice = (amount: number) => {
   }).format(amount / 100);
 };
 
+// Beta codes for direct access (in production, these should be in a database or env vars)
+export const BETA_CODES = ['TRAILBLAZERS', 'EARLYACCESS', 'FOUNDER'];
+
+export function isBetaCode(code: string): boolean {
+  return BETA_CODES.includes(code.toUpperCase());
+}
+
 export { getStripe }; 
