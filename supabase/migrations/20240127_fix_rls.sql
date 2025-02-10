@@ -27,8 +27,24 @@ WITH CHECK (auth.uid() = id);
 CREATE OR REPLACE FUNCTION public.handle_new_user()
 RETURNS trigger AS $$
 BEGIN
-  INSERT INTO public.profiles (id, subscription_status)
-  VALUES (new.id, 'inactive')
+  INSERT INTO public.profiles (
+    id,
+    email,
+    full_name,
+    is_admin,
+    subscription_status,
+    created_at,
+    updated_at
+  )
+  VALUES (
+    new.id,
+    new.email,
+    '',  -- empty string for full_name
+    false,  -- default is_admin to false
+    'inactive',  -- default subscription_status
+    now(),  -- created_at
+    now()   -- updated_at
+  )
   ON CONFLICT (id) DO NOTHING;
   RETURN new;
 END;
