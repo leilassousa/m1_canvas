@@ -21,7 +21,7 @@ const benefits = [
   {
     icon: Wallet,
     title: 'Affordable & Accessible',
-    description: 'No expensive consultants or complex software – just simple, affordable pricing.'
+    description: 'No expensive or complex software – just simple, affordable pricing.'
   }
 ];
 
