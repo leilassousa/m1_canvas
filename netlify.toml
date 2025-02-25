@@ -6,4 +6,17 @@
   NETLIFY_NEXT_PLUGIN_SKIP = "true"
 
 [[plugins]]
-  package = "@netlify/plugin-nextjs" 
+  package = "@netlify/plugin-nextjs"
+
+# Handle redirects for authentication flows
+[[redirects]]
+  from = "/auth/reset-callback"
+  to = "/.netlify/functions/next_auth_callback"
+  status = 200
+  force = true
+
+[[redirects]]
+  from = "/auth/reset-password"
+  to = "/auth/reset-password"
+  status = 200
+  force = true 

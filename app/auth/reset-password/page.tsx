@@ -11,6 +11,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { AlertCircle, CheckCircle } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 import { useRouter } from 'next/navigation';
+import { useAuth } from '@/lib/hooks/useAuth';
 
 const resetSchema = z.object({
   password: z.string().min(8, 'Password must be at least 8 characters'),
@@ -26,8 +27,41 @@ export default function ResetPasswordPage() {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [validatingSession, setValidatingSession] = useState(true);
+  const [hasValidSession, setHasValidSession] = useState(false);
   const router = useRouter();
   const supabase = createClient();
+  const { updatePassword } = useAuth();
+
+  // Check if the user has a valid session
+  useEffect(() => {
+    const checkSession = async () => {
+      try {
+        const { data, error } = await supabase.auth.getSession();
+        
+        if (error) {
+          console.error('Session error:', error);
+          setError('Your password reset link has expired. Please request a new one.');
+          setHasValidSession(false);
+        } else if (data.session) {
+          console.log('Valid session found');
+          setHasValidSession(true);
+        } else {
+          console.log('No active session found');
+          setError('Your password reset link has expired. Please request a new one.');
+          setHasValidSession(false);
+        }
+      } catch (err) {
+        console.error('Error checking session:', err);
+        setError('An error occurred. Please try again.');
+        setHasValidSession(false);
+      } finally {
+        setValidatingSession(false);
+      }
+    };
+
+    checkSession();
+  }, []);
 
   const {
     register,
@@ -42,12 +76,7 @@ export default function ResetPasswordPage() {
     setError(null);
     
     try {
-      const { error } = await supabase.auth.updateUser({
-        password: data.password,
-      });
-      
-      if (error) throw error;
-      
+      await updatePassword(data.password);
       setSuccess(true);
       
       // Redirect to login after 3 seconds
@@ -66,17 +95,30 @@ export default function ResetPasswordPage() {
     }
   };
 
+  const handleBackToLogin = () => {
+    router.push('/auth');
+  };
+
   return (
     <div className="min-h-screen flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8 bg-[#F2F2F2]">
       <div className="max-w-md w-full space-y-8 bg-white p-8 rounded-xl shadow-lg">
         <div className="text-center">
           <h2 className="text-3xl font-bold text-gray-900">Reset Password</h2>
           <p className="mt-2 text-sm text-gray-600">
-            Enter your new password below
+            {validatingSession 
+              ? "Verifying your reset link..." 
+              : hasValidSession 
+                ? "Enter your new password below" 
+                : "Password reset link expired"
+            }
           </p>
         </div>
 
-        {success ? (
+        {validatingSession ? (
+          <div className="flex justify-center py-8">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-orange-600"></div>
+          </div>
+        ) : success ? (
           <div className="space-y-4">
             <Alert className="bg-green-50 border-green-200">
               <CheckCircle className="h-4 w-4 text-green-500" />
@@ -84,6 +126,20 @@ export default function ResetPasswordPage() {
                 Your password has been reset successfully. Redirecting to login...
               </AlertDescription>
             </Alert>
+          </div>
+        ) : !hasValidSession ? (
+          <div className="space-y-6">
+            <Alert variant="destructive">
+              <AlertCircle className="h-4 w-4" />
+              <AlertDescription>{error}</AlertDescription>
+            </Alert>
+            <Button
+              type="button"
+              className="w-full bg-orange-600 hover:bg-orange-700"
+              onClick={handleBackToLogin}
+            >
+              Back to Login
+            </Button>
           </div>
         ) : (
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-6 mt-8">

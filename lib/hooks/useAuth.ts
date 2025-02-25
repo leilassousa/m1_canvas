@@ -51,10 +51,37 @@ export const useAuth = () => {
 
   const resetPassword = useCallback(
     async (email: string) => {
+      // Get the site URL - handle both local and production environments
+      const siteUrl = typeof window !== 'undefined' ? window.location.origin : '';
+      
+      // Log for debugging
+      console.log('Reset password URL:', `${siteUrl}/auth/reset-callback`);
+      
       const { error } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: `${window.location.origin}/auth/reset-callback`,
+        redirectTo: `${siteUrl}/auth/reset-callback`,
       })
-      if (error) throw error
+      
+      if (error) {
+        console.error('Reset password error:', error);
+        throw error;
+      }
+      
+      return { success: true }
+    },
+    []
+  )
+
+  const updatePassword = useCallback(
+    async (newPassword: string) => {
+      const { error } = await supabase.auth.updateUser({
+        password: newPassword,
+      })
+      
+      if (error) {
+        console.error('Update password error:', error);
+        throw error;
+      }
+      
       return { success: true }
     },
     []
@@ -72,5 +99,6 @@ export const useAuth = () => {
     signUp,
     signOut,
     resetPassword,
+    updatePassword,
   }
 } 
