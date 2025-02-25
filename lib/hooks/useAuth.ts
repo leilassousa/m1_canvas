@@ -49,6 +49,17 @@ export const useAuth = () => {
     []
   )
 
+  const resetPassword = useCallback(
+    async (email: string) => {
+      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: `${window.location.origin}/auth/reset-password`,
+      })
+      if (error) throw error
+      return { success: true }
+    },
+    []
+  )
+
   const signOut = useCallback(async () => {
     const { error } = await supabase.auth.signOut()
     if (error) throw error
@@ -60,5 +71,6 @@ export const useAuth = () => {
     signIn,
     signUp,
     signOut,
+    resetPassword,
   }
 } 

@@ -11,6 +11,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { AlertCircle } from 'lucide-react';
 import { useAuth } from '@/lib/hooks/useAuth';
 import { useRouter } from 'next/navigation';
+import { PasswordResetForm } from './password-reset-form';
 
 const authSchema = z.object({
   email: z.string().email('Invalid email address'),
@@ -26,6 +27,7 @@ type AuthFormProps = {
 export function AuthForm({ mode }: AuthFormProps) {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [showResetForm, setShowResetForm] = useState(false);
   const { signIn, signUp } = useAuth();
   const router = useRouter();
 
@@ -85,6 +87,11 @@ export function AuthForm({ mode }: AuthFormProps) {
     }
   };
 
+  // If showing password reset form
+  if (showResetForm) {
+    return <PasswordResetForm onCancel={() => setShowResetForm(false)} />;
+  }
+
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
       {error && (
@@ -124,7 +131,7 @@ export function AuthForm({ mode }: AuthFormProps) {
           <Button 
             variant="link" 
             className="text-sm text-orange-600 hover:text-orange-500"
-            onClick={() => {/* TODO: Implement password reset */}}
+            onClick={() => setShowResetForm(true)}
             type="button"
           >
             Forgot password?
