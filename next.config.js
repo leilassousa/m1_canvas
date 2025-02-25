@@ -14,6 +14,11 @@ const nextConfig = {
   },
   experimental: {
     serverActions: true,
+    // Disable tracing to avoid permission issues
+    outputFileTracingRoot: undefined,
+    outputFileTracingExcludes: {
+      '*': ['**/*'],
+    },
   },
   eslint: {
     // Warning: This allows production builds to successfully complete even if
